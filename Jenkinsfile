@@ -1,24 +1,44 @@
+def gv
+
 pipeline {
     agent any
-
-    environment {
-        JAVA_HOME = tool name: 'JDK 17', type: 'jdk'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+    parameters {
+        choice(name: 'VERSION', choices: ['1.1.0', '1.2.0', '1.3.0'], description: '')
+        booleanParam(name: 'executeTests', defaultValue: true, description: '')
     }
-
     stages {
-        stage('Checkout Code') {
+        stage("init") {
             steps {
-                checkout scm
-            }
-        }
-
-        stage('Build with Maven') {
-            steps {
-                dir('hello-ci') {
-                    sh 'mvn clean install'
+                script {
+                   gv = load "script.groovy" 
                 }
             }
         }
-    }
+        stage("build") {
+            steps {
+                script {
+                    gv.buildApp()
+                }
+            }
+        }
+        stage("test") {
+            when {
+                expression {
+                    params.executeTests
+                }
+            }
+            steps {
+                script {
+                    gv.testApp()
+                }
+            }
+        }
+        stage("deploy") {
+            steps {
+                script {
+                    gv.deployApp()
+                }
+            }
+        }
+    }   
 }
